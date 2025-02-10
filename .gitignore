@@ -1,0 +1,4 @@
+# Don't save copyrighted ASN.1 files
+# These can be downloaded from SAE for free
+**/*.asn
+**/*.ASN

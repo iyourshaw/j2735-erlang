@@ -1,0 +1,46 @@
+#!/usr/bin/env escript
+%% Compile all the modules
+
+main(_) ->
+    file:make_dir("ebin"),
+	compile("AddGrpB"),
+	compile("AddGrpC"),
+	compile("BasicSafetyMessage"),
+	compile("Common"),
+	compile("CommonSafetyRequest"),
+	compile("EmergencyVehicleAlert"),
+	compile("ITIS"),
+	compile("IntersectionCollision"),
+	compile("MapData"),
+	compile("MessageFrame"),
+	compile("NMEAcorrections"),
+	compile("NTCIP"),
+	compile("PersonalSafetyMessage"),
+	compile("ProbeDataManagement"),
+	compile("ProbeVehicleData"),
+	compile("REGION"),
+	compile("RTCMcorrections"),
+	compile("RoadSideAlert"),
+	compile("SPAT"),
+	compile("SignalRequestMessage"),
+	compile("SignalStatusMessage"),
+	compile("TestMessage00"),
+	compile("TestMessage01"),
+	compile("TestMessage02"),
+	compile("TestMessage03"),
+	compile("TestMessage04"),
+	compile("TestMessage05"),
+	compile("TestMessage06"),
+	compile("TestMessage07"),
+	compile("TestMessage08"),
+	compile("TestMessage09"),
+	compile("TestMessage10"),
+	compile("TestMessage11"),
+	compile("TestMessage12"),
+	compile("TestMessage13"),
+	compile("TestMessage14"),
+	compile("TestMessage15"),
+	compile("TravelerInformation").
+
+compile(Filename) ->
+    asn1ct:compile(Filename, [uper,jer,verbose, {i, "./asn"}, {outdir, "./ebin"} ]).
