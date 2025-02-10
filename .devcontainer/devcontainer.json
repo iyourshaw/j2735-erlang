@@ -22,9 +22,9 @@
 		}
 	},
 
-	"containerEnv": {
-		"ERL_LIBS": "/workspaces/j2735-codec-erlang"
-	}
+	// "containerEnv": {
+	// 	"ERL_LIBS": "/workspaces/j2735-erlang/2024"
+	// }
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"

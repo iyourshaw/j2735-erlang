@@ -1,27 +1,25 @@
 # Erlang codecs for J2735 
 
-The Erlang ASN.1 compiler were used compile UPER and JER codecs for the J2735 specifications for 2016, 2020 and 2024.
+The Erlang ASN.1 compiler was used to compile UPER and JER codecs for the J2735 specifications for 2016, 2020 and 2024.
 
 The ASN.1 files were downloaded from SAE.
 
 The following adjustments to the ASN.1 files were made to accomodate the Erlang compiler's requirements and quirks:
 
-* The modules had to be organized so that each file contains only one module, with the file name identical to the module name.  
-For example in the 2016 spec, the `DSRC` module was placed in a file named `DSRC.asn`, and in the 2024 spec, the `MapData` module was in a file named `MapData.asn`.
+* The modules had to be organized so that each file contains only one module, with the file name identical to the module name.  For example in the 2016 spec, the `DSRC` module was placed in a file named `DSRC.asn`, and in the 2024 spec, the `MapData` module's file name was changed to `MapData.asn`.
 
 * The 2024 specification contains the "WITH SUCCESSORS" syntax in IMPORT statements.  
 The compiler didn't recognize this syntax, so it had to be removed everywhere it appears, and then the 2024 spec compiled just fine.
 
-Compilation was done using the 'erlang:27' Dockerhub image in the dev container.
+Compilation was done using the 'erlang:27' Dockerhub image in a dev container.
 
 Erlang escripts to compile the ASN.1 for each year are here:
 
-[2016/compile_asn1.escript](2016/compile_asn1.escript)
-[2020/compile_asn1.escript](2020/compile_asn1.escript)
-[2024/compile_asn1.escript](2024/compile_asn1.escript)
+* [2016/compile_asn1.escript](2016/compile_asn1.escript)
+* [2020/compile_asn1.escript](2020/compile_asn1.escript)
+* [2024/compile_asn1.escript](2024/compile_asn1.escript)
 
-The generated Erlang source code and .beam bytecode are in the `ebin` directories under each year.  
-To test with the Erlang command line, connect to the dev container using vscode or CLion, cd into one of the ebin directories, and start the Erlang shell:
+The generated Erlang source code and .beam bytecode are in the `ebin` directories under each year.  To test with the Erlang command line, connect to the dev container using vscode or CLion, cd into one of the ebin directories, and start the Erlang shell:
 
 ```bash
 cd 2024/ebin
@@ -107,14 +105,15 @@ file:write_file("../examples/rsm_saved.hex", RsmHex).
 ### JER Test
 The encode/decode functionality for UPER works well and seems to be very solid.  
 
-On the other hand, the JER codecs appear to be in a more preliminary state. The JER encoding seems to have issues with object classes or open types.  For example:
+On the other hand, the JER codecs appear to be in a more preliminary state. The JER encoding seems to have issues with information object classes and/or open types.  
+
+For example trying to encode a MessageFrame to JER returns an error:
 
 ```erlang
 'MessageFrame':jer_encode('MessageFrame', Spat).
 ```
 
-returns an error, but extracting the payload from the message frame does work.
-For example, this works:
+But extracting the payload from the message frame and decoding that works:  
 
 ```erlang
 {'MessageFrame', 19, SpatPayload} = Spat.
