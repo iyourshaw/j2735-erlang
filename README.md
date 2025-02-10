@@ -26,7 +26,7 @@ cd 2024/ebin
 erl
 ```
 
-### Example: Decode an UPER SPAT Message Frame to an Erlang term
+## Example: Decode an UPER SPAT Message Frame to an Erlang term
 
 Read the UPER/hex from a file:
 ```erlang
@@ -75,7 +75,7 @@ Save the Erlang term to a file:
 file:write_file("../examples/spat.src", io_lib:format("~p.~n", [Spat])).
 ```
 
-### Example: Encode an Erlang term for a Road Safety Message as UPER
+## Example: Encode an Erlang term for a Road Safety Message as UPER
 
 Load the Erlang term and encode as UPER:
 ```erlang
@@ -102,7 +102,7 @@ then save the hex:
 file:write_file("../examples/rsm_saved.hex", RsmHex).
 ```
 
-### JER Test
+## JER Test
 The encode/decode functionality for UPER works well and seems to be very solid.  
 
 On the other hand, the JER codecs appear to be in a more preliminary state. The JER encoding seems to have issues with information object classes and/or open types.  
