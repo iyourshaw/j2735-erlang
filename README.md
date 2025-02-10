@@ -113,7 +113,7 @@ For example trying to encode a MessageFrame to JER returns an error:
 'MessageFrame':jer_encode('MessageFrame', Spat).
 ```
 
-But extracting the payload from the message frame and decoding that works:  
+But extracting the payload from the message frame and encoding that works:  
 
 ```erlang
 {'MessageFrame', 19, SpatPayload} = Spat.
