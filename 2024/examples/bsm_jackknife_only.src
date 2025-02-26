@@ -12,7 +12,7 @@
             {'VehicleSize',0,0}},
         [{'PartIIcontent',0,
              {'VehicleSafetyExtensions',
-                 [eventHardBraking],
+                 [eventJackKnife],
                  {'PathHistory',asn1_NOVALUE,asn1_NOVALUE,
                      [{'PathHistoryPoint',10099,2075,-28,659,asn1_NOVALUE,
                           asn1_NOVALUE,asn1_NOVALUE},
