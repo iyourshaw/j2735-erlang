@@ -1,70 +1,38 @@
 #!/usr/bin/env escript
 
-main([MessageType, FilePath]) ->
-    Message = random_message(list_to_atom(MessageType)),
+main([Module, MessageType, FilePath]) ->
+    Message = random_message(list_to_atom(Module), list_to_atom(MessageType)),
     erlang:display(Message),
     file:write_file(FilePath ++ ".src", io_lib:format("~p.~n", [Message])),
-    Uper = get_uper(list_to_atom(MessageType), Message),
+    Uper = get_uper(list_to_atom(Module), list_to_atom(MessageType), Message),
     erlang:display(Uper),
     file:write_file(FilePath ++ ".bin", Uper),
     Hex = binary:encode_hex(Uper),
     file:write_file(FilePath ++ ".hex", Hex),
     erlang:display(Hex);
-main([MessageType]) ->
-    Message = random_message(list_to_atom(MessageType)),
+main([Module, MessageType]) ->
+    Message = random_message(list_to_atom(Module), list_to_atom(MessageType)),
     erlang:display(Message);
 main(_) ->
     usage().
 
 
 usage() ->
-    io:format("usage:\n from bash shell:\n\n./random_bsm.escript map 'filepath'\n\n"),
+    io:format("usage:\n from bash shell:\n\n./random_bsm.escript MapData 'filepath'\n\n"),
     halt(1).
 
+fix_element(Index, Tuple, Type)  when is_number(Index) and is_tuple(Tuple) and is_atom(Type) ->
+    setelement(Index, Tuple, fix(Type, element(Index, Tuple)));
+fix_element(Index, Tuple, Type) ->
+    io:format("fix_element: wrong types ~s, ~s, ~s~n", [Index, Tuple, Type]).
+
+random_fixed(Module, Type) ->
+    {ok, Message} = asn1ct:value(Module, Type),
+    fix(Type, Message).
+
+random_message(Module, Type) ->
+    random_fixed(Module, Type).
     
-random_message('MapData') ->
-    {ok, Map} = asn1ct:value('MapData', 'MapData'),
-    Map1 = strip_regional(map, Map),
-    Map2 = setelement(6, Map1, fix('IntersectionGeometryList', element(6, Map1))),
-    Map3 = strip_roadSegments(Map2),
-    Map4 = strip_dataParameters(Map3),
-    Map5 = strip_restrictionList(Map4),
-    Map5;
-random_message('IntersectionGeometryList') ->
-    {ok, IGL} = asn1ct:value('MapData', 'IntersectionGeometryList'),
-    fix('IntersectionGeometryList', IGL);
-random_message('IntersectionGeometry') ->
-    {ok, IG} = asn1ct:value('MapData', 'IntersectionGeometry'),
-    IG1 = fix('IntersectionGeometry', IG),
-    IG1;
-random_message('LaneList') ->
-    {ok, LL} = asn1ct:value('MapData', 'LaneList'),
-    fix('LaneList', LL);
-random_message('GenericLane') ->
-    {ok, L} = asn1ct:value('MapData', 'GenericLane'),
-    fix('GenericLane', L);
-random_message('ComputedLane') ->
-    {ok, CL} = asn1ct:value('Common', 'ComputedLane'),
-    fix('ComputedLane', CL);
-random_message('NodeListXY') ->
-    {ok, NL} = asn1ct:value('Common', 'NodeListXY'),
-    fix('NodeListXY', NL);
-random_message('NodeSetXY') ->
-    {ok, NS} = asn1ct:value('Common', 'NodeSetXY'),
-    fix('NodeSetXY', NS);
-    % NS = [],
-    % ensure_2_nodes(NS);
-random_message('ConnectsToList') ->
-    {ok, CL} = asn1ct:value('MapData', 'ConnectsToList'),
-    CL;
-random_message('Connection') ->
-    {ok, C} = asn1ct:value('MapData', 'Connection'),
-    C;
-random_message('NodeXY') ->
-    {ok, N} = asn1ct:value('Common', 'NodeXY'),
-    N;
-random_message(_) ->
-    io:format("Unknown message type").
 
 strip_regional(map, Map) ->
     setelement(10, Map, asn1_NOVALUE);
@@ -80,19 +48,31 @@ strip_regional('ComputedLane', CL) ->
     setelement(8, CL, asn1_NOVALUE);
 strip_regional('NodeSetXY', NS) ->
     [N || N <- NS, element(1, element(2, N)) =/= regional];
-strip_regional(_, _) ->
-    io:format("get_uper: Unknown message type").
+strip_regional('RoadSegment', RS) ->
+    setelement(9, RS, asn1_NOVALUE);
+strip_regional(Unk, _) ->
+    io:format("strip_regional: Unknown message type ~s~n", [Unk]).
+
+
 
 % fix/2
+fix('MapData', Map) ->
+    Map1 = strip_regional(map, Map),
+    Map2 = fix_element(6, Map1, 'IntersectionGeometryList'),
+    Map3 = fix_element(7, Map2, 'RoadSegmentList'),
+    Map5 = fix_element(9, Map3, 'RestrictionClassList'),
+    Map5;
 fix('LaneList', LL) ->
+    [fix('GenericLane', L) || L <- LL];
+fix('RoadLaneSetList', LL) ->
     [fix('GenericLane', L) || L <- LL];
 fix('GenericLane', L) ->
     % Strip regional
     L0 = strip_regional('GenericLane', L),
     % Fix laneAttriutes
-    L1 = setelement(6, L0, fix('LaneAttributes', element(6, L0))),
+    L1 = fix_element(6, L0, 'LaneAttributes'),
     % Fix nodeList
-    L2 = setelement(8, L1, fix('NodeListXY', element(8, L1))),
+    L2 = fix_element(8, L1, 'NodeListXY'),
     L2;
 fix('LaneAttributes', L) ->
     strip_regional('LaneAttributes', L);
@@ -102,15 +82,9 @@ fix('IntersectionGeometry',IG) ->
     % Remove regional
     IG1 = strip_regional('IntersectionGeometry', IG),
     % Fix Position3D
-    P = element(5, IG1),
-    PFixed = strip_regional('Position3D', P),
-    IG2 = setelement(5, IG1, PFixed),
-    % Remove speedLimits
-    IG3 = setelement(7, IG2, asn1_NOVALUE),
+    IG2 = fix_element(5, IG1, 'Position3D'),
     % Fix laneSet
-    Lanes = element(8, IG3),
-    FixedLanes = fix('LaneList', Lanes),
-    IG4 = setelement(8, IG3, FixedLanes),
+    IG4 = fix_element(8, IG2, 'LaneList'),
     % Remove preemptPriorityData/SignalControlZone -- only includes regional
     setelement(9, IG4, asn1_NOVALUE);
 fix('ComputedLane', CL) ->
@@ -126,13 +100,38 @@ fix('NodeSetXY', NS) ->
     NS3 = strip_regional('NodeSetXY', NS2),
     % At leaset 2 nodes are required.  Add nodes if less.
     NS4 = ensure_2_nodes(NS3),
-    NS4.
+    NS4;
+fix('Position3D', P) ->
+    strip_regional('Position3D', P);
+fix('RoadSegmentList', RSL) ->
+    [ fix('RoadSegment', RS) || RS <- RSL];
+fix('RoadSegment', RS) ->
+    RS1 = strip_regional('RoadSegment', RS),
+    % Fix refPoint
+    RS2 = fix_element(5, RS1, 'Position3D'),
+    % Fix roadLaneSet
+    RS3 = fix_element(8, RS2, 'RoadLaneSetList'),
+    RS3;
+fix('RestrictionUserTypeList', RL) ->
+    [ fix('RestrictionUserType', R) || R <- RL];
+fix('RestrictionUserType', R) ->
+    case element(1, R) of
+        % Regenerate until regional is replaced
+        regional -> random_message('MapData', 'RestrictionUserType');
+        _ -> R
+    end;
+fix('RestrictionClassList', RCL) ->
+    [ fix('RestrictionClassAssignment', R) || R <- RCL];
+fix('RestrictionClassAssignment', RCA) ->
+    fix_element(3, RCA, 'RestrictionUserTypeList');
+fix(_, Unk) ->
+    Unk.
 
 strip_attributes('NodeSetXY', NS) ->
     [setelement(3, NS1, asn1_NOVALUE) || NS1 <- NS].
 
 ensure_2_nodes(NS) when length(NS) < 2 ->
-    AddNode = [ random_message('NodeXY') | NS],
+    AddNode = [ random_message('Common', 'NodeXY') | NS],
     Stripped = strip_attributes('NodeSetXY', strip_regional('NodeSetXY', AddNode)),
     ensure_2_nodes(Stripped);
 ensure_2_nodes(NS) when length(NS) >= 2 ->
@@ -142,30 +141,14 @@ ensure_2_nodes(NS) when length(NS) >= 2 ->
 % fix/3
 fix('NodeListXY', nodes, NL) ->
     setelement(2, NL, fix('NodeSetXY', element(2, NL)));
-fix('NodeListXY', computed, NL) ->
-    setelement(2, NL, fix('ComputedLane', element(2, NL))).
+fix('NodeListXY', computed, NL) -> setelement(2, NL, fix('ComputedLane', element(2, NL)));
+fix(_,_,_) ->
+    io:format("fix/3 no match").
+
+get_uper(Module, Type, Term) ->
+    {ok, Uper} = Module:encode(Type, Term),
+    Uper.
 
 
-% strip_intersections(Map) ->
-%     setelement(6, Map, asn1_NOVALUE).
-
-strip_roadSegments(Map) ->
-    setelement(7, Map, asn1_NOVALUE).
-
-strip_dataParameters(Map) ->
-    setelement(8, Map, asn1_NOVALUE).
-
-strip_restrictionList(Map) ->
-    setelement(9, Map, asn1_NOVALUE).
-
-
-get_uper('MapData', Map) ->
-    {ok, Uper} = 'MapData':encode('MapData', Map),
-    Uper;
-get_uper('NodeSetXY', N) ->
-    {ok, Uper} = 'Common':encode('NodeSetXY', N),
-    Uper;
-get_uper(_, _) ->
-    io:format("get_uper: Unknown message type").
 
 
