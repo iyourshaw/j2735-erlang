@@ -1,0 +1,8 @@
+{'BasicSafetyMessage',
+    {'BSMcoreData',3,<<"OCTE">>,8856,99968667,-1421192669,34877,
+        {'PositionalAccuracy',153,195,23303},
+        reverseGears,5260,8278,-64,
+        {'AccelerationSet4Way',24,-8,68,-22833},
+        {'BrakeSystemStatus',[leftRear],off,off,unavailable,unavailable,on},
+        {'VehicleSize',343,1814}},
+    asn1_NOVALUE,asn1_NOVALUE}.
